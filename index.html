@@ -1950,18 +1950,16 @@
         }
 
         async function searchYouTube(query) {
-            // Use YouTube search with proper embed URL for signed-in users
+            // YouTube blocks iframe embedding, so we'll use preview cards
             const searchUrl = `https://www.youtube.com/results?search_query=${encodeURIComponent(query)}`;
-            const embedUrl = `https://www.youtube.com/embed?listType=search&list=${encodeURIComponent(query)}&enablejsapi=1&origin=${encodeURIComponent(window.location.origin)}&modestbranding=1&rel=0`;
             
             return [
                 {
                     url: searchUrl,
                     title: `YouTube: ${query}`,
                     snippet: `Watch videos about ${query} on YouTube`,
-                    embeddable: true,
-                    type: 'youtube',
-                    embedUrl: embedUrl
+                    embeddable: false,
+                    type: 'youtube'
                 }
             ];
         }
@@ -2151,24 +2149,14 @@
                         <div class="result-row-carousel">
                             <div class="result-row-container">
                                 ${videoCards.map((item, index) => {
-                                    const embedSrc = item.embedUrl || item.url;
                                     return `
-                                        <div class="result-card" id="${item.id || 'yt-' + index}">
+                                        <div class="result-card" onclick="window.open('${item.url.replace(/'/g, "\\'")}', '_blank')" id="${item.id || 'yt-' + index}">
                                             <div class="result-card-badge">${getEngineIcon('youtube')}</div>
-                                            <iframe 
-                                                class="result-card-embed"
-                                                src="${embedSrc}"
-                                                allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
-                                                allowfullscreen
-                                                sandbox="allow-same-origin allow-scripts allow-popups allow-forms"
-                                                loading="lazy"
-                                                onerror="handleIframeError('${item.id || 'yt-' + index}', '${item.url.replace(/'/g, "\\'")}', '${escapeHtml(item.title)}', '${escapeHtml(item.snippet || '')}')"
-                                            ></iframe>
-                                            <div class="result-card-preview" style="display: none;" id="preview-${item.id || 'yt-' + index}">
+                                            <div class="result-card-preview">
                                                 <div class="result-card-title">${escapeHtml(item.title)}</div>
                                                 <div class="result-card-snippet">${escapeHtml(item.snippet)}</div>
                                                 <div class="result-card-actions">
-                                                    <button class="result-card-btn result-card-btn-primary" onclick="window.open('${item.url.replace(/'/g, "\\'")}', '_blank')">
+                                                    <button class="result-card-btn result-card-btn-primary" onclick="event.stopPropagation(); window.open('${item.url.replace(/'/g, "\\'")}', '_blank')">
                                                         <svg class="icon-sm" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                                                             <path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"></path>
                                                             <polyline points="15 3 21 3 21 9"></polyline>

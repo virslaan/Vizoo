@@ -453,17 +453,40 @@
         }
         
         .hero-title-empty {
-            font-size: clamp(42px, 8vw, 72px);
+            font-size: clamp(36px, 7vw, 64px);
             font-weight: 300;
-            color: #ff6b35;
-            margin-bottom: 20px;
+            color: rgba(255, 255, 255, 0.9);
+            margin-bottom: 24px;
+            line-height: 1.3;
         }
         
         .hero-subtitle-empty {
             font-size: clamp(16px, 3vw, 22px);
             font-weight: 300;
-            color: rgba(255, 255, 255, 0.7);
-            margin-bottom: 32px;
+            color: rgba(255, 255, 255, 0.6);
+            margin-bottom: 0;
+            line-height: 1.6;
+            opacity: 0;
+        }
+        
+        .hero-subtitle-empty.typing {
+            opacity: 1;
+        }
+        
+        .typing-text::after {
+            content: '|';
+            color: rgba(255, 107, 53, 0.9);
+            animation: blink 1s infinite;
+            margin-left: 2px;
+        }
+        
+        @keyframes blink {
+            0%, 50% {
+                opacity: 1;
+            }
+            51%, 100% {
+                opacity: 0;
+            }
         }
         
         .hero-cta {
@@ -702,19 +725,19 @@
 
         .result-card-badge {
             position: absolute;
-            top: 8px;
-            right: 8px;
-            background: rgba(0, 0, 0, 0.8);
-            padding: 4px 8px;
-            border-radius: 4px;
-            font-size: 10px;
+            top: 6px;
+            right: 6px;
+            background: rgba(0, 0, 0, 0.6);
+            padding: 3px 6px;
+            border-radius: 3px;
+            font-size: 9px;
             z-index: 5;
-            backdrop-filter: blur(10px);
-            box-shadow: 0 1px 3px rgba(0, 0, 0, 0.5);
+            backdrop-filter: blur(5px);
+            box-shadow: none;
             display: flex;
             align-items: center;
-            gap: 4px;
-            color: #ffffff;
+            gap: 3px;
+            color: rgba(255, 255, 255, 0.8);
         }
 
         .result-row-carousel {
@@ -742,52 +765,25 @@
         }
 
         .result-card {
-            flex: 0 0 280px;
-            height: 160px;
-            background: rgba(0, 0, 0, 0.3);
-            border-radius: 8px;
+            flex: 0 0 240px;
+            height: 140px;
+            background: rgba(0, 0, 0, 0.2);
+            border-radius: 6px;
             overflow: hidden;
-            border: 1px solid rgba(255, 255, 255, 0.1);
+            border: 1px solid rgba(255, 255, 255, 0.08);
             position: relative;
             cursor: pointer;
-            margin-right: 12px;
-            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.4);
+            margin-right: 10px;
+            box-shadow: none;
             z-index: 2;
         }
 
         .result-card:hover {
-            border-color: #ff6b35;
-            background: rgba(0, 0, 0, 0.4);
-            transition: all 0.3s ease;
+            border-color: rgba(255, 255, 255, 0.15);
+            background: rgba(0, 0, 0, 0.25);
+            transition: all 0.2s ease;
         }
         
-        body.search-animating .result-card:hover {
-            animation: cardHoverColorCycle 1.2s cubic-bezier(0.4, 0, 0.2, 1);
-        }
-        
-        @keyframes cardHoverColorCycle {
-            0% {
-                border-color: #ff6b35;
-            }
-            16.66% {
-                border-color: #0096ff;
-            }
-            33.33% {
-                border-color: #00ff88;
-            }
-            50% {
-                border-color: #ff6b9d;
-            }
-            66.66% {
-                border-color: #9d4edd;
-            }
-            83.33% {
-                border-color: #ff6b35;
-            }
-            100% {
-                border-color: #ff6b35;
-            }
-        }
         
         .result-row-header {
             z-index: 1 !important;
@@ -812,7 +808,7 @@
         }
 
         .result-card-preview {
-            padding: 16px;
+            padding: 12px;
             height: 100%;
             display: flex;
             flex-direction: column;
@@ -820,11 +816,11 @@
         }
 
         .result-card-title {
-            font-size: 15px;
-            font-weight: 600;
-            margin-bottom: 8px;
-            color: #ffffff;
-            line-height: 1.4;
+            font-size: 13px;
+            font-weight: 500;
+            margin-bottom: 6px;
+            color: rgba(255, 255, 255, 0.9);
+            line-height: 1.3;
             overflow: hidden;
             text-overflow: ellipsis;
             display: -webkit-box;
@@ -834,87 +830,52 @@
         }
 
         .result-card-snippet {
-            font-size: 12px;
-            color: rgba(255, 255, 255, 0.7);
-            line-height: 1.5;
+            font-size: 11px;
+            color: rgba(255, 255, 255, 0.5);
+            line-height: 1.4;
             flex: 1;
-            margin-bottom: 12px;
+            margin-bottom: 8px;
             overflow: hidden;
             display: -webkit-box;
-            -webkit-line-clamp: 3;
-            line-clamp: 3;
+            -webkit-line-clamp: 2;
+            line-clamp: 2;
             -webkit-box-orient: vertical;
         }
 
         .result-card-actions {
             display: flex;
-            gap: 6px;
-        }
-
-        .result-card-btn {
-            padding: 6px 12px;
-            background: rgba(255, 255, 255, 0.1);
-            border: 1px solid rgba(255, 255, 255, 0.2);
-            border-radius: 6px;
-            color: #ffffff;
-            font-size: 11px;
-            cursor: pointer;
-            transition: all 0.2s;
-            display: flex;
-            align-items: center;
             gap: 4px;
         }
 
+        .result-card-btn {
+            padding: 4px 8px;
+            background: rgba(255, 255, 255, 0.08);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: 4px;
+            color: rgba(255, 255, 255, 0.7);
+            font-size: 10px;
+            cursor: pointer;
+            transition: all 0.15s;
+            display: flex;
+            align-items: center;
+            gap: 3px;
+        }
+
         .result-card-btn:hover {
-            background: rgba(255, 255, 255, 0.2);
-            border-color: rgba(255, 255, 255, 0.3);
+            background: rgba(255, 255, 255, 0.12);
+            border-color: rgba(255, 255, 255, 0.15);
+            color: rgba(255, 255, 255, 0.9);
         }
 
         .result-card-btn-primary {
-            background: #ff6b35;
-            border-color: #ff6b35;
-            color: #ffffff;
-            transition: all 0.6s ease;
-        }
-        
-        body.search-animating .result-card-btn-primary {
-            animation: buttonColorCycle 1.2s cubic-bezier(0.4, 0, 0.2, 1);
-        }
-        
-        @keyframes buttonColorCycle {
-            0% {
-                background: #ff6b35;
-                border-color: #ff6b35;
-            }
-            16.66% {
-                background: #0096ff;
-                border-color: #0096ff;
-            }
-            33.33% {
-                background: #00ff88;
-                border-color: #00ff88;
-            }
-            50% {
-                background: #ff6b9d;
-                border-color: #ff6b9d;
-            }
-            66.66% {
-                background: #9d4edd;
-                border-color: #9d4edd;
-            }
-            83.33% {
-                background: #ff6b35;
-                border-color: #ff6b35;
-            }
-            100% {
-                background: #ff6b35;
-                border-color: #ff6b35;
-            }
+            background: rgba(255, 107, 53, 0.2);
+            border-color: rgba(255, 107, 53, 0.3);
+            color: rgba(255, 255, 255, 0.9);
         }
 
         .result-card-btn-primary:hover {
-            background: #ff8555;
-            border-color: #ff8555;
+            background: rgba(255, 107, 53, 0.3);
+            border-color: rgba(255, 107, 53, 0.4);
         }
 
         .icon-sm {
@@ -1504,7 +1465,7 @@
         <!-- Hero Section -->
         <section class="hero" id="hero">
             <h1 class="hero-title hero-title-empty">Vizoo</h1>
-            <p class="hero-subtitle hero-subtitle-empty">Search everything</p>
+            <p class="hero-subtitle hero-subtitle-empty" id="typingText1" style="font-size: clamp(18px, 4vw, 28px); color: rgba(255, 107, 53, 0.9); margin-top: 24px; min-height: 1.6em;"></p>
             <div class="mode-chips" id="modeChips">
                 <button class="mode-chip active" data-mode="all">
                     <svg class="mode-chip-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
@@ -1970,7 +1931,7 @@
         // Search functions using browser capabilities and direct URLs
         async function searchGoogle(query) {
             return [{
-                url: `https://www.google.com/search?q=${encodeURIComponent(query)}&igu=1`,
+                url: `https://www.google.com/search?q=${encodeURIComponent(query)}&igu=1&theme=dark`,
                 title: `Google Search: ${query}`,
                 snippet: `Search results for "${query}"`,
                 embeddable: true,
@@ -1980,7 +1941,7 @@
 
         async function searchBing(query) {
             return [{
-                url: `https://www.bing.com/search?q=${encodeURIComponent(query)}&FORM=HDRSC1`,
+                url: `https://www.bing.com/search?q=${encodeURIComponent(query)}&FORM=HDRSC1&darkoverridemode=1`,
                 title: `Bing Search: ${query}`,
                 snippet: `Search results for "${query}" on Bing`,
                 embeddable: true,
@@ -2065,7 +2026,7 @@
                 
                 if (data.extract) {
                     return [{
-                        url: `https://en.wikipedia.org/wiki/${encodeURIComponent(query)}`,
+                        url: `https://en.wikipedia.org/wiki/${encodeURIComponent(query)}?useskin=vector-dark`,
                         title: data.title || query,
                         snippet: data.extract,
                         embeddable: true,
@@ -2077,7 +2038,7 @@
             }
             
             return [{
-                url: `https://en.wikipedia.org/wiki/${encodeURIComponent(query)}`,
+                url: `https://en.wikipedia.org/wiki/${encodeURIComponent(query)}?useskin=vector-dark`,
                 title: `Wikipedia: ${query}`,
                 snippet: `Wikipedia article about ${query}`,
                 embeddable: true,
@@ -2104,7 +2065,7 @@
             let html = '';
             let heroHTML = '';
             
-            // Main hero: Google, Bing, Brave, Wikipedia
+            // Main hero: Google, Bing, Wikipedia
             const heroes = [];
             
             // Google first (priority)
@@ -2115,18 +2076,14 @@
             if (state.results.bing && state.results.bing[0]) {
                 heroes.push({ name: 'Bing', ...state.results.bing[0] });
             }
-            // Brave third
-            if (state.results.brave && state.results.brave[0]) {
-                heroes.push({ name: 'Brave', ...state.results.brave[0] });
-            }
-            // Wikipedia fourth
+            // Wikipedia third
             if (state.results.wikipedia && state.results.wikipedia[0]) {
                 heroes.push({ name: 'Wikipedia', ...state.results.wikipedia[0] });
             }
             
             // Fallback if no heroes
             if (heroes.length === 0) {
-                heroes.push({ name: 'Google', url: `https://www.google.com/search?q=${encodeURIComponent(state.query)}`, title: `Google: ${state.query}` });
+                heroes.push({ name: 'Google', url: `https://www.google.com/search?q=${encodeURIComponent(state.query)}&theme=dark`, title: `Google: ${state.query}` });
             }
 
             // Store hero HTML separately for right column
@@ -2697,11 +2654,89 @@ Safari:
             setHomepageBtn.addEventListener('click', setAsHomepage);
         }
 
+        // Typing animation
+        function typeText(element, text, speed = 50, callback) {
+            if (!element) return;
+            element.classList.add('typing');
+            let i = 0;
+            element.textContent = '';
+            
+            function type() {
+                if (i < text.length) {
+                    element.textContent = text.substring(0, i + 1);
+                    element.classList.add('typing-text');
+                    i++;
+                    setTimeout(type, speed);
+                } else {
+                    setTimeout(() => {
+                        element.classList.remove('typing-text');
+                        if (callback) callback();
+                    }, 500);
+                }
+            }
+            type();
+        }
+        
+        function startTypingAnimation() {
+            const sentences = [
+                'Search here, you are Home',
+                'Vipul thinks unity of Open Searches',
+                'We target to bring you home'
+            ];
+            
+            let currentIndex = 0;
+            const element = document.getElementById('typingText1');
+            if (!element) return;
+            
+            function typeNext() {
+                if (currentIndex >= sentences.length) {
+                    currentIndex = 0; // Loop back to start
+                }
+                
+                const text = sentences[currentIndex];
+                typeText(element, text, 40, () => {
+                    // Wait a bit before erasing
+                    setTimeout(() => {
+                        eraseText(element, () => {
+                            currentIndex++;
+                            // Wait before typing next sentence
+                            setTimeout(typeNext, 300);
+                        });
+                    }, 2000);
+                });
+            }
+            
+            // Start typing after initial delay
+            setTimeout(typeNext, 500);
+        }
+        
+        function eraseText(element, callback) {
+            let text = element.textContent;
+            if (!text) {
+                if (callback) callback();
+                return;
+            }
+            
+            function erase() {
+                if (text.length > 0) {
+                    text = text.substring(0, text.length - 1);
+                    element.textContent = text;
+                    element.classList.add('typing-text');
+                    setTimeout(erase, 30);
+                } else {
+                    element.classList.remove('typing-text');
+                    if (callback) callback();
+                }
+            }
+            erase();
+        }
+        
         // Initialize
         initAIModal();
         updateRecommendationsPanel();
         updateHomepageCount();
         startBackgroundSlideshow();
+        startTypingAnimation();
         searchInput.focus();
     </script>
 </body>

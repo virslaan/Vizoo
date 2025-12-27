@@ -450,6 +450,7 @@
             opacity: 1;
             position: relative;
             z-index: 1;
+            margin-top: 80px;
         }
         
         .hero-title-empty {
@@ -567,6 +568,9 @@
             gap: 12px;
             justify-content: center;
             flex-wrap: wrap;
+            margin-top: 40px;
+            position: relative;
+            z-index: 1;
         }
 
         .mode-chip {
@@ -738,6 +742,20 @@
             align-items: center;
             gap: 3px;
             color: rgba(255, 255, 255, 0.8);
+        }
+        
+        .result-card-badge img {
+            width: 20px;
+            height: 20px;
+            border-radius: 4px;
+            object-fit: contain;
+            display: block;
+        }
+        
+        .result-card-badge svg {
+            width: 20px;
+            height: 20px;
+            display: block;
         }
 
         .result-row-carousel {
@@ -1930,12 +1948,16 @@
 
         // Search functions using browser capabilities and direct URLs
         async function searchGoogle(query) {
+            // Try multiple Google URLs - some may work better for logged-in users
+            // Using &udm=2 for simplified results that might embed better
             return [{
-                url: `https://www.google.com/search?q=${encodeURIComponent(query)}&igu=1&theme=dark`,
+                url: `https://www.google.com/search?q=${encodeURIComponent(query)}&igu=1&theme=dark&source=hp&udm=2`,
                 title: `Google Search: ${query}`,
                 snippet: `Search results for "${query}"`,
                 embeddable: true,
-                type: 'google'
+                type: 'google',
+                // Alternative URL for fallback
+                altUrl: `https://www.google.com/search?q=${encodeURIComponent(query)}&theme=dark`
             }];
         }
 
@@ -1950,16 +1972,20 @@
         }
 
         async function searchYouTube(query) {
-            // YouTube blocks iframe embedding, so we'll use preview cards
+            // Use YouTube's official embed API for better compatibility
+            // Try to fetch video IDs from search and use proper embed format
             const searchUrl = `https://www.youtube.com/results?search_query=${encodeURIComponent(query)}`;
+            // Use YouTube's embed search format - this is the official way to embed search results
+            const embedUrl = `https://www.youtube.com/embed?listType=search&list=${encodeURIComponent(query)}&enablejsapi=1&origin=${encodeURIComponent(window.location.origin)}&modestbranding=1&rel=0&autoplay=0&mute=0`;
             
             return [
                 {
                     url: searchUrl,
                     title: `YouTube: ${query}`,
                     snippet: `Watch videos about ${query} on YouTube`,
-                    embeddable: false,
-                    type: 'youtube'
+                    embeddable: true, // Try embedding with proper YouTube embed API
+                    type: 'youtube',
+                    embedUrl: embedUrl
                 }
             ];
         }
@@ -2095,10 +2121,13 @@
                                     <iframe 
                                         src="${hero.url}"
                                         class="search-hero-iframe"
-                                        allow="fullscreen"
-                                        sandbox="allow-same-origin allow-scripts allow-popups allow-forms allow-top-navigation allow-modals"
+                                        allow="fullscreen; autoplay; encrypted-media; picture-in-picture; web-share; clipboard-read; clipboard-write"
+                                        sandbox="allow-same-origin allow-scripts allow-popups allow-forms allow-top-navigation allow-modals allow-popups-to-escape-sandbox allow-storage-access-by-user-activation"
                                         loading="lazy"
-                                        referrerpolicy="no-referrer-when-downgrade"
+                                        referrerpolicy="strict-origin-when-cross-origin"
+                                        credentialless="false"
+                                        allowfullscreen
+                                        onload="checkIframeLoad('hero-${idx}', '${hero.url.replace(/'/g, "\\'")}', '${escapeHtml(hero.title || state.query)}')"
                                         onerror="handleIframeError('hero-${idx}', '${hero.url.replace(/'/g, "\\'")}', '${escapeHtml(hero.title || state.query)}', '${escapeHtml(hero.snippet || '')}')"
                                     ></iframe>
                                 </div>
@@ -2411,27 +2440,42 @@
             }
         }
 
-        function checkIframeLoad(cardId) {
+        function checkIframeLoad(cardId, url, title) {
             setTimeout(() => {
                 const card = document.getElementById(cardId);
-                if (card) {
-                    const iframe = card.querySelector('.result-card-embed');
-                    if (iframe) {
-                        try {
-                            const iframeDoc = iframe.contentDocument || iframe.contentWindow?.document;
-                            if (!iframeDoc) {
-                                const preview = card.querySelector(`#preview-${cardId}`);
-                                if (preview) {
-                                    iframe.style.display = 'none';
-                                    preview.style.display = 'flex';
-                                }
-                            }
-                        } catch (e) {
-                            // Cross-origin blocked - expected
+                if (!card) return;
+                
+                // Check if it's a hero iframe or result card iframe
+                const iframe = card.querySelector('.result-card-embed') || card.querySelector('.search-hero-iframe');
+                if (!iframe) return;
+                
+                try {
+                    // Try to access iframe content - if blocked, show fallback
+                    const iframeDoc = iframe.contentDocument || iframe.contentWindow?.document;
+                    if (!iframeDoc || (iframeDoc.body && iframeDoc.body.innerHTML.trim() === '')) {
+                        // Iframe might be blocked - try alternative URL for Google
+                        if (url && url.includes('google.com') && !url.includes('udm=2')) {
+                            // Try alternative Google URL format
+                            const altUrl = url + (url.includes('?') ? '&' : '?') + 'udm=2';
+                            iframe.src = altUrl;
+                            return;
                         }
+                        // Show preview/fallback after delay
+                        setTimeout(() => {
+                            handleIframeError(cardId, url || '', title || '', '');
+                        }, 1000);
                     }
+                } catch (e) {
+                    // Cross-origin error - this is expected for Google/YouTube
+                    // Check if iframe actually rendered content by checking dimensions
+                    setTimeout(() => {
+                        if (iframe.offsetHeight < 50) {
+                            // Iframe seems empty, show fallback
+                            handleIframeError(cardId, url || '', title || '', '');
+                        }
+                    }, 2000);
                 }
-            }, 2000);
+            }, 1000);
         }
 
         function escapeHtml(text) {
@@ -2442,12 +2486,17 @@
 
         function getEngineIcon(engine) {
             const icons = {
+                chatgpt: '<img src="https://chat.openai.com/favicon.ico" alt="ChatGPT" style="width: 20px; height: 20px; border-radius: 4px;" onerror="this.style.display=\'none\'; this.nextElementSibling.style.display=\'inline\'"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="display: none;"><circle cx="12" cy="12" r="10"></circle><path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"></path></svg>',
+                perplexity: '<img src="https://www.perplexity.ai/favicon.ico" alt="Perplexity" style="width: 20px; height: 20px; border-radius: 4px;" onerror="this.style.display=\'none\'; this.nextElementSibling.style.display=\'inline\'"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="display: none;"><circle cx="12" cy="12" r="10"></circle><path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"></path></svg>',
+                grok: '<img src="https://x.com/favicon.ico" alt="Grok" style="width: 20px; height: 20px; border-radius: 4px;" onerror="this.style.display=\'none\'; this.nextElementSibling.style.display=\'inline\'"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="display: none;"><circle cx="12" cy="12" r="10"></circle><path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"></path></svg>',
+                google: '<img src="https://www.google.com/favicon.ico" alt="Google" style="width: 20px; height: 20px; border-radius: 4px;" onerror="this.style.display=\'none\'; this.nextElementSibling.style.display=\'inline\'"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="display: none;"><circle cx="11" cy="11" r="8"></circle><path d="m21 21-4.35-4.35"></path></svg>',
+                bing: '<img src="https://www.bing.com/favicon.ico" alt="Bing" style="width: 20px; height: 20px; border-radius: 4px;" onerror="this.style.display=\'none\'; this.nextElementSibling.style.display=\'inline\'"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="display: none;"><circle cx="11" cy="11" r="8"></circle><path d="m21 21-4.35-4.35"></path></svg>',
                 youtube: '<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22.54 6.42a2.78 2.78 0 0 0-1.94-2C18.88 4 12 4 12 4s-6.88 0-8.6.46a2.78 2.78 0 0 0-1.94 2A29 29 0 0 0 1 11.75a29 29 0 0 0 .46 5.33A2.78 2.78 0 0 0 3.4 19c1.72.46 8.6.46 8.6.46s6.88 0 8.6-.46a2.78 2.78 0 0 0 1.94-2 29 29 0 0 0 .46-5.25 29 29 0 0 0-.46-5.33z"></path><polygon points="9.75 15.02 15.5 11.75 9.75 8.48 9.75 15.02"></polygon></svg>',
-                brave: '<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2L2 7l10 5 10-5-10-5z"></path><path d="M2 17l10 5 10-5"></path><path d="M2 12l10 5 10-5"></path><circle cx="12" cy="12" r="3"></circle></svg>',
-                wikipedia: '<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"></circle><path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"></path><path d="M8 12h8M12 8v8"></path></svg>',
+                brave: '<img src="https://search.brave.com/favicon.ico" alt="Brave" style="width: 20px; height: 20px; border-radius: 4px;" onerror="this.style.display=\'none\'; this.nextElementSibling.style.display=\'inline\'"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="display: none;"><path d="M12 2L2 7l10 5 10-5-10-5z"></path><path d="M2 17l10 5 10-5"></path><path d="M2 12l10 5 10-5"></path><circle cx="12" cy="12" r="3"></circle></svg>',
+                wikipedia: '<img src="https://en.wikipedia.org/favicon.ico" alt="Wikipedia" style="width: 20px; height: 20px; border-radius: 4px;" onerror="this.style.display=\'none\'; this.nextElementSibling.style.display=\'inline\'"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="display: none;"><circle cx="12" cy="12" r="10"></circle><path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"></path><path d="M8 12h8M12 8v8"></path></svg>',
                 gemini: '<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2L2 7l10 5 10-5-10-5z"></path><path d="M2 17l10 5 10-5"></path><path d="M2 12l10 5 10-5"></path></svg>',
-                amazon: '<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="9" cy="21" r="1"></circle><circle cx="20" cy="21" r="1"></circle><path d="M1 1h4l2.68 13.39a2 2 0 0 0 2 1.61h9.72a2 2 0 0 0 2-1.61L23 6H6"></path></svg>',
-                reddit: '<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"></circle><circle cx="12" cy="12" r="3"></circle><path d="M12 1v6m0 6v6"></path></svg>',
+                amazon: '<img src="https://www.amazon.com/favicon.ico" alt="Amazon" style="width: 20px; height: 20px; border-radius: 4px;" onerror="this.style.display=\'none\'; this.nextElementSibling.style.display=\'inline\'"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="display: none;"><circle cx="9" cy="21" r="1"></circle><circle cx="20" cy="21" r="1"></circle><path d="M1 1h4l2.68 13.39a2 2 0 0 0 2 1.61h9.72a2 2 0 0 0 2-1.61L23 6H6"></path></svg>',
+                reddit: '<img src="https://www.reddit.com/favicon.ico" alt="Reddit" style="width: 20px; height: 20px; border-radius: 4px;" onerror="this.style.display=\'none\'; this.nextElementSibling.style.display=\'inline\'"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="display: none;"><circle cx="12" cy="12" r="10"></circle><circle cx="12" cy="12" r="3"></circle><path d="M12 1v6m0 6v6"></path></svg>',
                 default: '<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"></circle><path d="m21 21-4.35-4.35"></path></svg>'
             };
             return icons[engine] || icons.default;
@@ -2718,6 +2767,48 @@ Safari:
             }
             erase();
         }
+        
+        // Suppress iframe console errors
+        const originalError = console.error;
+        const originalWarn = console.warn;
+        
+        console.error = function(...args) {
+            const message = args.join(' ');
+            // Filter out known iframe-related errors
+            if (
+                message.includes('DOMNodeInserted') ||
+                message.includes('DOMNodeRemoved') ||
+                message.includes('autofocusing') ||
+                message.includes('frame-ancestors') ||
+                message.includes('Content Security Policy') ||
+                message.includes('permissions policy') ||
+                message.includes('service worker') ||
+                message.includes('batchexecute') ||
+                message.includes('Failed to load resource') && message.includes('google.com')
+            ) {
+                return; // Suppress these errors
+            }
+            originalError.apply(console, args);
+        };
+        
+        console.warn = function(...args) {
+            const message = args.join(' ');
+            // Filter out known iframe-related warnings
+            if (
+                message.includes('DOMNodeInserted') ||
+                message.includes('DOMNodeRemoved') ||
+                message.includes('autofocusing') ||
+                message.includes('permissions policy') ||
+                message.includes('autoplay') ||
+                message.includes('encrypted-media') ||
+                message.includes('accelerometer') ||
+                message.includes('gyroscope') ||
+                message.includes('clipboard-write')
+            ) {
+                return; // Suppress these warnings
+            }
+            originalWarn.apply(console, args);
+        };
         
         // Initialize
         initAIModal();

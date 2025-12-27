@@ -11,6 +11,10 @@
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
     
     <style>
+        html {
+            zoom: 0.8;
+        }
+        
         * {
             margin: 0;
             padding: 0;
@@ -579,13 +583,7 @@
         }
 
         .mode-chips {
-            display: flex;
-            gap: 12px;
-            justify-content: center;
-            flex-wrap: wrap;
-            margin-top: 40px;
-            position: relative;
-            z-index: 1;
+            display: none;
         }
 
         .mode-chip {
@@ -2786,16 +2784,16 @@ Safari:
                 
                 // Engine priority scoring
                 const engineScores = {
-                    'wikipedia': 30,
-                    'google': 25,
-                    'bing': 20,
-                    'brave': 15,
-                    'amazon': 10,
-                    'reddit': 8,
+                    'wikipedia': 40,
+                    'google': 35,
+                    'bing': 30,
+                    'brave': 20,
+                    'amazon': 15,
+                    'reddit': 3,
                     'youtube': 5
                 };
                 score += engineScores[engine] || 5;
-                if (engineScores[engine] > 20) {
+                if (engineScores[engine] > 25) {
                     reasons.push(`High-quality ${engine} source`);
                 }
                 
@@ -2803,33 +2801,49 @@ Safari:
                 const queryWords = query.toLowerCase().split(/\s+/);
                 const titleLower = (result.title || '').toLowerCase();
                 const titleMatches = queryWords.filter(word => titleLower.includes(word)).length;
-                score += titleMatches * 10;
-                if (titleMatches > 0) {
+                
+                // Reduce title match weight for Reddit (social media is less authoritative)
+                const titleMatchMultiplier = engine === 'reddit' ? 3 : 10;
+                score += titleMatches * titleMatchMultiplier;
+                if (titleMatches > 0 && engine !== 'reddit') {
                     reasons.push(`${titleMatches} query match${titleMatches > 1 ? 'es' : ''} in title`);
                 }
                 
                 // Snippet quality (longer snippets often better)
                 if (result.snippet && result.snippet.length > 50) {
                     score += 5;
-                    reasons.push('Detailed description available');
+                    if (engine !== 'reddit') {
+                        reasons.push('Detailed description available');
+                    }
                 }
                 
-                // Embeddable bonus (can show inline)
-                if (result.embeddable) {
+                // Embeddable bonus (can show inline) - but not for Reddit
+                if (result.embeddable && engine !== 'reddit') {
                     score += 8;
                     reasons.push('Can be embedded inline');
                 }
                 
                 // Wikipedia gets extra boost for informational queries
                 if (engine === 'wikipedia' && queryWords.length <= 3) {
-                    score += 15;
+                    score += 20;
                     reasons.push('Best for informational queries');
                 }
                 
                 // Google/Bing get boost for general searches
                 if ((engine === 'google' || engine === 'bing') && queryWords.length > 2) {
-                    score += 10;
+                    score += 15;
                     reasons.push('Comprehensive search results');
+                }
+                
+                // Penalize Reddit for informational queries (prefer Wikipedia/Google)
+                if (engine === 'reddit' && queryWords.length <= 3) {
+                    score -= 10;
+                }
+                
+                // Penalize Reddit for technical/academic queries
+                const academicTerms = ['what is', 'definition', 'how to', 'explain', 'meaning', 'theory', 'research', 'study'];
+                if (engine === 'reddit' && academicTerms.some(term => query.toLowerCase().includes(term))) {
+                    score -= 15;
                 }
                 
                 return {
